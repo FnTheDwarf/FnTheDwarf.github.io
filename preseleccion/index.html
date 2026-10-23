@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow">
+<title>Preselección con criterios previos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+/* Layout: una columna de ancho de celular, centrada; la bandeja usa una tabla con scroll propio para comparar. */
+:root{
+  --bg:#F1F4EF; --surface:#FFFFFF; --ink:#16231C; --mut:#5A6A61; --line:#DCE3DB; --soft:#EAEFE8;
+  --acc:#1F5C4A; --acc-ink:#FFFFFF; --acc-soft:#DDEBE4;
+  --amb:#8F5409; --amb-soft:#F6E8CF; --no:#A02B2B; --no-soft:#F6DFDF; --ok:#1F6B4D;
+  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --f-disp:"Bricolage Grotesque","Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1612; --surface:#16211B; --ink:#E7EFE9; --mut:#9BAAA1; --line:#26352C; --soft:#1C2A22;
+  --acc:#5DC5A2; --acc-ink:#08140F; --acc-soft:#1B3329;
+  --amb:#E4B567; --amb-soft:#35290F; --no:#F09A9A; --no-soft:#3A1E1E; --ok:#6FD3AE; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1612; --surface:#16211B; --ink:#E7EFE9; --mut:#9BAAA1; --line:#26352C; --soft:#1C2A22;
+  --acc:#5DC5A2; --acc-ink:#08140F; --acc-soft:#1B3329;
+  --amb:#E4B567; --amb-soft:#35290F; --no:#F09A9A; --no-soft:#3A1E1E; --ok:#6FD3AE; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;margin:0}
+button,input,textarea,select{font:inherit;color:inherit}
+.wrap{max-width:560px;margin:0 auto;padding-block:0 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0 12px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.brand{background:none;border:0;padding:0;cursor:pointer;font-family:var(--f-disp);font-weight:700;font-size:17px;color:var(--acc);letter-spacing:-.01em}
+.demo{font-size:12px;color:var(--mut)}
+h1{font-family:var(--f-disp);font-weight:700;font-size:28px;line-height:1.1;letter-spacing:-.02em;margin:6px 0 10px;text-wrap:balance}
+h2{font-family:var(--f-disp);font-weight:700;font-size:21px;line-height:1.2;letter-spacing:-.01em;margin:0 0 6px;text-wrap:balance}
+h3{font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--mut);margin:20px 0 8px}
+p{margin:0 0 12px}
+.lead{color:var(--mut);font-size:16px}
+.mut{color:var(--mut)}
+.small{font-size:13px}
+.stack{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:10px;align-items:center}
+.row.sp{justify-content:space-between}
+.wrapx{flex-wrap:wrap}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.card+.card{margin-top:10px}
+.big{display:flex;flex-direction:column;gap:2px;text-align:left;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;cursor:pointer}
+.big b{font-family:var(--f-disp);font-size:18px}
+.big span{color:var(--mut);font-size:14px}
+.big:hover{border-color:var(--acc)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 16px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-weight:600;cursor:pointer;text-decoration:none;color:var(--ink);text-align:center}
+.btn.p{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.btn.sm{min-height:36px;padding:6px 12px;font-size:14px}
+.btn.block{width:100%}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.link{border:0;background:none;color:var(--acc);padding:6px 2px;min-height:0;justify-content:flex-start}
+.btn:focus-visible,.big:focus-visible,.opt:focus-visible,.brand:focus-visible,.sc button:focus-visible,.tab:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.chip{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.03em;padding:3px 9px;border-radius:999px;background:var(--soft);color:var(--mut);white-space:nowrap}
+.chip.ob{background:var(--acc-soft);color:var(--acc)}
+.chip.de{background:var(--amb-soft);color:var(--amb)}
+.chip.no{background:var(--no-soft);color:var(--no)}
+.chip.ok{background:var(--acc-soft);color:var(--ok)}
+.steps{display:flex;gap:6px;margin:4px 0 16px}
+.steps i{flex:1;height:4px;border-radius:2px;background:var(--line)}
+.steps i.on{background:var(--acc)}
+.crumb{font-size:12px;color:var(--mut)}
+.opt{display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer}
+.opt.sel{border-color:var(--acc);background:var(--acc-soft)}
+.opt .rad{flex:none;width:20px;height:20px;border-radius:50%;border:2px solid var(--mut);margin-top:1px}
+.opt.sel .rad{border-color:var(--acc);background:radial-gradient(var(--acc) 45%,transparent 50%)}
+.opt .cb{flex:none;width:20px;height:20px;border-radius:6px;border:2px solid var(--mut);margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--acc-ink)}
+.opt.sel .cb{background:var(--acc);border-color:var(--acc)}
+.ql{font-weight:700;font-size:16px;margin:18px 0 8px}
+.ql:first-child{margin-top:0}
+.field{display:block;width:100%;background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:11px 14px}
+.field:focus{outline:none;border-color:var(--acc)}
+textarea.field{min-height:150px;resize:vertical;line-height:1.5}
+label.lab{display:block;font-weight:700;font-size:14px;margin:14px 0 6px}
+.hint{font-size:12px;color:var(--mut);margin-top:4px}
+.promise{background:var(--acc);color:var(--acc-ink);border-radius:var(--r);padding:14px 16px;margin:14px 0}
+.promise b{display:block;font-family:var(--f-disp);font-size:18px}
+.note{font-size:13px;color:var(--mut);background:var(--soft);border-radius:10px;padding:10px 12px;margin:12px 0}
+.warn{font-size:13px;color:var(--amb);background:var(--amb-soft);border-radius:10px;padding:10px 12px;margin:12px 0}
+.err{font-size:13px;color:var(--no);background:var(--no-soft);border-radius:10px;padding:10px 12px;margin:12px 0}
+.tabs{display:flex;gap:4px;background:var(--soft);padding:4px;border-radius:12px;margin:12px 0 16px}
+.tab{flex:1;border:0;background:none;padding:9px 6px;border-radius:9px;font-weight:600;font-size:14px;cursor:pointer;color:var(--mut)}
+.tab.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.bar{height:5px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--acc)}
+.crit{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}
+.crit:last-child{border-bottom:0}
+.crit .t{flex:1;min-width:0}
+.crit .t b{display:block;font-size:14px}
+.crit .t span{font-size:13px;color:var(--mut)}
+.mark{flex:none;width:22px;height:22px;border-radius:50%;font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.mark.y{background:var(--acc-soft);color:var(--ok)}
+.mark.n{background:var(--no-soft);color:var(--no)}
+.quote{background:var(--soft);border-left:3px solid var(--acc);border-radius:10px;padding:10px 12px;font-size:15px;line-height:1.5}
+.rec{background:var(--amb-soft);color:var(--amb);border-radius:10px;padding:9px 12px;font-size:13px;margin-top:10px}
+.rec b{display:block;font-size:11px;letter-spacing:.05em;text-transform:uppercase}
+.who{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px}
+.who b{font-family:var(--f-disp);font-size:21px}
+.acts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.acts .btn{padding:8px 4px;font-size:13.5px;min-height:46px}
+.tblw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table.cmp{border-collapse:collapse;font-size:13px;min-width:100%}
+table.cmp th,table.cmp td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;min-width:140px}
+table.cmp thead th{font-family:var(--f-disp);font-size:15px}
+table.cmp th small{display:block;font-weight:400;color:var(--mut);font-size:11px}
+table.cmp tbody th{position:sticky;left:0;background:var(--surface);min-width:112px;max-width:112px;font-size:12px;color:var(--mut);z-index:1}
+table.cmp thead th:first-child{position:sticky;left:0;background:var(--surface);z-index:1;min-width:112px}
+table.cmp td.words{line-height:1.45;min-width:200px}
+table.cmp td.y{color:var(--ink)}
+.sc{display:flex;gap:6px}
+.sc button{flex:1;min-height:44px;border:1.5px solid var(--line);background:var(--surface);border-radius:10px;font-weight:700;cursor:pointer}
+.sc button.sel{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.ends{display:flex;justify-content:space-between;font-size:11px;color:var(--mut);margin-top:4px}
+.mono{font-family:var(--f-mono)}
+.code{font-family:var(--f-mono);font-weight:700;font-size:20px;letter-spacing:.06em}
+.cvdoc{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:20px 18px;font-size:14px}
+.cvdoc h2{font-size:22px;margin-bottom:2px}
+.cvdoc h4{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:16px 0 4px;border-bottom:1px solid var(--line);padding-bottom:3px}
+.cvrow{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.cvrow .nm{flex:1;min-width:0}
+.cvrow .nm b{display:block}
+.cvrow .nm>span{font-size:13px;color:var(--mut)}
+table.res{border-collapse:collapse;font-size:12.5px;width:100%}
+table.res th,table.res td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+table.res th{color:var(--mut);font-weight:600}
+details.brief{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:12px}
+details.brief summary{cursor:pointer;font-weight:600}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;z-index:20}
+.status{font-size:12px;font-weight:700}
+.qbox{background:var(--acc-soft);color:var(--ink);border-radius:12px;padding:12px 14px;font-family:var(--f-disp);font-weight:600;font-size:17px;line-height:1.3}
+.quote.big{font-size:16.5px;line-height:1.55;padding:14px}
+.banner{border-radius:12px;padding:10px 12px;margin:8px 0 6px}
+.banner b{display:block;font-family:var(--f-disp);font-size:16px}
+.banner.ok{background:var(--acc-soft);color:var(--ok)}.banner.mid{background:var(--amb-soft);color:var(--amb)}.banner.no{background:var(--no-soft);color:var(--no)}
+.mark.s{width:18px;height:18px;font-size:10px}
+.pdfbox{margin-top:10px;border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden;color:#16231C}
+.pdfbox canvas{display:block;width:100%;height:auto}
+.pdfbox .cvdoc{border:0;border-radius:0}
+.pcard{margin:0 0 22px}
+.pcard .who{margin-top:14px}
+.bubble{border:1px solid var(--line);border-radius:18px 18px 18px 5px;padding:12px 14px;margin-top:10px;background:var(--surface)}
+.bubble.b2{background:var(--soft)}
+.bubble.b3{border-radius:18px 18px 5px 18px}
+.bubble .bh{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--mut);margin-bottom:8px}
+.bubble .bh .chip{letter-spacing:0;text-transform:none;white-space:normal;text-align:right}
+.bubble.b2 .quote{background:var(--surface)}
+.pcard .acts{margin-top:12px}
+@media (prefers-reduced-motion:no-preference){.btn,.opt,.big{transition:border-color .12s,background .12s}}
+</style>
+</head><body>
+<div class="wrap" id="app"></div>
+<script>
+(function(){'use strict';
+/* ---------- Datos ---------- */
+/* Banco de criterios: solo criterios permitidos (sin edad, sexo, estado civil, apariencia, etc.).
+   opts: [valor, texto para el postulante, cumple(1/0), texto que aparecería en un CV] */
+const BANK={
+ wk:{label:'Disponibilidad de fin de semana',q:'¿Puedes trabajar sábado y domingo en la tarde?',
+  opts:[['ambos','Sí, ambos días',1,'Disponibilidad: sábado y domingo'],['uno','Solo uno de los dos días',0,'Disponibilidad: solo un día del fin de semana'],['no','No',0,'Disponibilidad: lunes a viernes']],
+  miss:'disponibilidad ambos días del fin de semana',pri:'quienes podían trabajar ambos días del fin de semana'},
+ rot:{label:'Turnos rotativos, con cierre',q:'¿Puedes hacer turnos rotativos, incluido el cierre hasta las 22:00?',
+  opts:[['si','Sí, incluido el cierre',1,'Disponibilidad: turnos rotativos, incluido el cierre'],['parcial','Turnos rotativos, pero sin cierre',0,'Disponibilidad: turnos rotativos sin cierre'],['no','Solo turno de mañana',0,'Disponibilidad: solo turno de mañana']],
+  miss:'disponibilidad para turnos rotativos con cierre',pri:'quienes podían cubrir el turno de cierre'},
+ man:{label:'Entrar a las 7:30',q:'¿Puedes entrar a las 7:30 de la mañana?',
+  opts:[['si','Sí, todos los días',1,'Disponibilidad: desde las 7:30'],['aveces','Algunos días',0,'Disponibilidad: horario parcial en la mañana'],['no','No',0,'Disponibilidad: desde media mañana']],
+  miss:'poder entrar a las 7:30',pri:'quienes podían entrar a las 7:30'},
+ ini:{label:'Comenzar en 2 semanas',q:'¿Desde cuándo podrías comenzar?',
+  opts:[['ya','De inmediato',1,'Puede comenzar de inmediato'],['1-2','En 1 o 2 semanas',1,'Puede comenzar en 2 semanas'],['mas','En más de 2 semanas',0,'Puede comenzar en un mes o más']],
+  miss:'poder comenzar dentro de las próximas dos semanas',pri:'quienes podían comenzar antes'},
+ pub:{label:'Experiencia atendiendo público',q:'¿Has atendido público antes?',
+  opts:[['6+','Sí, 6 meses o más',1],['<6','Sí, menos de 6 meses',0],['no','Todavía no',0]],
+  miss:'experiencia atendiendo público',pri:'quienes ya tenían experiencia atendiendo público'},
+ caja:{label:'Experiencia en caja o efectivo',q:'¿Has trabajado en caja o manejando efectivo?',
+  opts:[['6+','Sí, 6 meses o más',1],['<6','Sí, menos de 6 meses',0],['no','Todavía no',0]],
+  miss:'experiencia en caja o manejo de efectivo',pri:'quienes ya tenían experiencia en caja'},
+ coc:{label:'Experiencia en cocina o alimentos',q:'¿Has trabajado en cocina o manipulando alimentos?',
+  opts:[['6+','Sí, 6 meses o más',1],['<6','Sí, menos de 6 meses',0],['no','Todavía no',0]],
+  miss:'experiencia en cocina o manipulación de alimentos',pri:'quienes ya tenían experiencia en cocina'},
+ tra:{label:'Traslado de hasta 45 minutos',q:'¿Puedes llegar al local en menos de 45 minutos?',
+  opts:[['si','Sí',1],['no','No',0]],
+  miss:'que el traslado al local fuera de hasta 45 minutos',pri:'quienes vivían más cerca del local'}
+};
+const QBANK=[
+ 'Un sábado a las 15:00 el local está lleno y se te cae una bandeja. ¿Qué haces?',
+ 'Hay fila en la caja y un cliente reclama que el precio de la góndola no es el que cobra el sistema. ¿Qué haces?',
+ 'Un cliente se queja de que su pedido llegó frío y hay más gente esperando. ¿Qué haces?',
+ 'Llegas a tu turno y la persona que te entrega no apareció. ¿Qué haces?',
+ 'Terminas de armar un pedido y notas que faltó un producto que ya no queda en bodega. ¿Qué haces?',
+ 'Una compañera te pide cubrirle el turno el mismo día y tú ya tenías planes. ¿Qué haces?'
+];
+const GENERIC=['elegimos a otras personas cuyas respuestas calzaban más con el cargo.','recibimos muchas postulaciones y seguimos con quienes calzaban mejor con lo que buscábamos esta vez.'];
+
+const DEMO=[
+ {id:'pehuen',code:'PEH',company:'Café Pehuén',comuna:'Providencia',role:'Garzón/a part-time',schedule:'Fines de semana, turno tarde',
+  crit:[{id:'wk',t:'ob'},{id:'ini',t:'ob'},{id:'pub',t:'de'}],q:QBANK[0],deadline:'2026-11-06',demo:true},
+ {id:'aromos',code:'ARO',company:'Minimarket Los Aromos',comuna:'Ñuñoa',role:'Cajero/a y repositor/a',schedule:'Turnos rotativos, lunes a domingo',
+  crit:[{id:'rot',t:'ob'},{id:'ini',t:'ob'},{id:'caja',t:'de'}],q:QBANK[1],deadline:'2026-11-06',demo:true}
+];
+
+/* Postulantes ficticios: [id, nombre, [criterio1, criterio2, criterio3], recomendación, respuesta, último trabajo, datos que aparecen en el CV]
+   Aptos (cumplen los 3 criterios): Café Pehuén -> Camila, Antonia, Rodrigo, Pablo. Los Aromos -> Paula, Andrea, Héctor, Esteban. */
+const FIX_RAW={
+pehuen:[
+['a01','Joaquín',['uno','ya','6+'],null,'Pido perdón a la mesa, junto los vidrios y sigo atendiendo. Me pasó harto en el bar donde trabajé, uno aprende a no quedarse pegado.','Garzón, Bar La Esquina (2 años)',['ini']],
+['a02','Camila',['ambos','1-2','6+'],'Rosa, compañera en un trabajo anterior','Primero pido disculpas a la mesa y recojo rápido. Si hay vidrio aviso a cocina para que alguien me ayude a limpiar y nadie se corte. Después sigo con las otras mesas con calma, para que no se note el apuro.','Garzona, Restaurante Tres Palmas (1 año 8 meses)',['ini']],
+['a03','Matías',['ambos','mas','6+'],'Hernán, dueño del local de al lado','Pido disculpas, limpio y le aviso al encargado que se cayó, por si hay que cobrar o cambiar algo.','Garzón de eventos, Banquetera Sur (8 meses)',['wk']],
+['a04','Fernanda',['ambos','ya','<6'],null,'Me da un poco de nervio, pero lo recojo altiro y les pido perdón a los clientes. Después respiro y sigo.','Garzona, café del barrio (3 meses)',[]],
+['a05','Sebastián',['no','mas','no'],null,'Lo recojo y listo. No creo que sea tan grave.','Bodega, reposición de supermercado (1 año)',['wk','ini']],
+['a06','Valentina',['ambos','ya','no'],'Pedro, cliente habitual del café','Pido disculpas, limpio y, si la bandeja era de una mesa, vuelvo a pedir lo que se perdió para que el cliente no tenga que esperar de nuevo.','Estudiante de diseño; práctica en estudio',['ini']],
+['a07','Ignacia',['uno','1-2','<6'],null,'Primero veo que nadie se haya hecho daño. Después limpio con cuidado y aviso.','Promotora de supermercado (4 meses)',[]],
+['a08','Tomás',['ambos','1-2','<6'],null,'Recojo, me río un poco para bajar la tensión con la mesa y le llevo otra cosa de cortesía si el jefe me deja.','Garzón, cafetería universitaria (5 meses)',['wk']],
+['a09','Antonia',['ambos','ya','6+'],null,'Aviso a mi compañero de turno para que cubra mis mesas un minuto, limpio y vuelvo. Si algo se perdió lo repongo yo primero y después lo aviso.','Garzona, Hotel Plaza (2 años); barista, Café Lomas (1 año)',[]],
+['a10','Benjamín',['no','ya','6+'],null,'Pido perdón y limpio rápido.','Atención en kiosco (3 años)',['ini']],
+['a11','Catalina',['uno','mas','no'],null,'Me pongo nerviosa, pero igual limpio y pido ayuda a quien esté cerca.','Sin experiencia laboral formal',[]],
+['a12','Diego',['uno','ya','6+'],'Marcela, amiga de la dueña','Me disculpo y limpio. Si hay mucha gente, pido ayuda a un compañero para no demorar a las otras mesas.','Garzón, restobar (1 año 3 meses)',['wk']],
+['a13','Martina',['ambos','mas','6+'],null,'Saludo a la mesa, me disculpo, junto todo con cuidado y llamo a cocina por lo que falte. Siempre trato de que el cliente sienta que está todo controlado.','Garzona, casino de empresa (2 años)',['ini']],
+['a14','Rodrigo',['ambos','ya','6+'],null,'Limpio, pido disculpas y repongo lo que se perdió. Después sigo atendiendo normal, no me quedo dándole vueltas.','Garzón, Restaurante El Parrón (3 años)',['wk','ini']],
+['a15','Javiera',['no','1-2','<6'],null,'Recojo y sigo, la verdad no pienso mucho en eso.','Ayudante de pastelería (4 meses)',[]],
+['a16','Lucas',['ambos','1-2','no'],null,'Pido perdón, recojo con cuidado y reviso que el piso quede seco para que nadie resbale.','Bodega (1 año)',['ini']],
+['a17','Constanza',['uno','ya','no'],null,'Avisaría al jefe y que él decida.','Estudiante; cuidado de niños',[]],
+['a18','Pablo',['ambos','1-2','6+'],null,'Disculpas a la mesa, aviso a cocina y limpio. Si es sábado con el local lleno, pido que alguien tome mis mesas mientras tanto.','Garzón y bartender, Pub Central (2 años 6 meses)',[]],
+['a19','Francisca',['ambos','mas','<6'],null,'Ofrezco disculpas, limpio y me aseguro de que nadie se haya mojado ni cortado. Después traigo lo que falte sin que lo pidan.','Cajera de panadería (5 meses)',['wk']],
+['a20','Nicolás',['no','ya','6+'],null,'Lo recojo, pido perdón y sigo. Uno se equivoca.','Garzón, Café del Parque (1 año 1 mes)',['ini']]
+],
+aromos:[
+['b01','Marcelo',['parcial','ya','<6'],null,'Le pido disculpas por la espera, reviso el precio en el sistema y, si es el de la góndola, lo cobro igual.','Cajero en botillería (4 meses)',[]],
+['b02','Daniela',['si','mas','6+'],'Raúl, vecino del local','Llamo al encargado, le explico al cliente y reviso el precio mientras sigo con la fila para que no se acumule.','Cajera, Minimarket Express (2 años)',['ini']],
+['b03','Ricardo',['no','ya','no'],null,'Le digo que el precio que vale es el de la caja.','Chofer de reparto (3 años)',['rot']],
+['b04','Paula',['si','ya','6+'],null,'Le pido a la persona de atrás que espere un segundo, voy yo a mirar la etiqueta y, si el cliente tiene razón, le cobro el de la góndola y aviso para corregir la etiqueta.','Cajera, Supermercado Vecino (1 año 10 meses)',['ini']],
+['b05','Gonzalo',['si','1-2','<6'],'Carmen, prima de la dueña','Reviso el precio, le pido disculpas y trato de ir rápido con los que siguen.','Reponedor y cajero ocasional (5 meses)',[]],
+['b06','Isidora',['parcial','1-2','6+'],null,'Chequeo el precio con el encargado y le explico al cliente con calma.','Cajera, Farmacia Barrial (1 año 6 meses)',['rot']],
+['b07','Felipe',['no','mas','<6'],null,'Lo mando a hablar con el jefe.','Reemplazos en caja de almacén (2 meses)',['ini']],
+['b08','Andrea',['si','1-2','6+'],'Luis, jefe en un trabajo anterior','Llamo a alguien de reposición para que mire la góndola mientras yo sigo cobrando. Al cliente le digo que lo estamos viendo y que, si hay error, se le cobra el menor.','Cajera y encargada de turno, Mini Market Don Pepe (3 años)',['rot','ini']],
+['b09','Vicente',['si','ya','<6'],null,'Pido disculpas por la fila y reviso rápido el precio.','Cajero en kiosco (4 meses)',[]],
+['b10','Trinidad',['parcial','ya','no'],null,'Me pongo nerviosa, pero le pregunto a mi compañera cuál es el precio correcto.','Estudiante; trabajo familiar en almacén',['rot']],
+['b11','Mauricio',['no','1-2','6+'],'Pamela, clienta del minimarket','Voy a la góndola, veo la etiqueta y decido ahí mismo. Con la fila esperando hay que resolver rápido.','Cajero, ferretería (2 años)',['ini']],
+['b12','Sofía',['si','ya','no'],null,'Le pido que me muestre la etiqueta, le agradezco que avise y resolvemos con el jefe.','Reponedora nocturna (1 año)',[]],
+['b13','Cristóbal',['parcial','mas','<6'],null,'Cobro lo que dice el sistema.','Cajero, local de comida rápida (3 meses)',['rot']],
+['b14','Elisa',['si','mas','<6'],null,'Mantengo la calma, pido ayuda a otro cajero para abrir otra caja y reviso el precio con el cliente.','Cajera en feria navideña (2 meses)',[]],
+['b15','Héctor',['si','ya','6+'],null,'Digo que sin problema, mando a un compañero a ver la etiqueta y sigo atendiendo. Si el error es nuestro, cobro el precio más bajo.','Cajero, Supermercado Plaza (4 años)',['rot','ini']],
+['b16','Bárbara',['no','ya','6+'],null,'Pido disculpas y reviso el precio. Aprendí a no discutir con el cliente, a veces tiene razón.','Cajera, tienda de conveniencia (2 años)',[]],
+['b17','Ignacio',['si','1-2','<6'],null,'Le aviso al encargado de inmediato.','Cajero ayudante (5 meses)',['ini']],
+['b18','Rocío',['parcial','ya','no'],null,'Me tranquilizo, reviso y trato de ser amable con todos en la fila.','Auxiliar de bodega (8 meses)',[]],
+['b19','Esteban',['si','1-2','6+'],null,'Reviso la etiqueta y, si hay diferencia, lo cobro al precio menor y dejo anotado para que corrijan la góndola. A los de la fila les pido disculpas por esperar.','Cajero, Minimarket Barrio Alto (1 año 9 meses)',[]],
+['b20','Josefa',['no','mas','no'],null,'Lo atiendo como pueda.','Sin experiencia laboral formal',['rot']]
+]};
+
+/* ---------- Utilidades ---------- */
+const mem={};
+const LS={
+ get(k,d){try{const v=localStorage.getItem('pcp:'+k);if(v!=null)return JSON.parse(v)}catch(e){} return (k in mem)?mem[k]:d},
+ set(k,v){mem[k]=v;try{localStorage.setItem('pcp:'+k,JSON.stringify(v))}catch(e){}},
+ del(k){delete mem[k];try{localStorage.removeItem('pcp:'+k)}catch(e){}},
+ clear(){Object.keys(mem).forEach(k=>delete mem[k]);try{Object.keys(localStorage).filter(k=>k.indexOf('pcp:')===0).forEach(k=>localStorage.removeItem(k))}catch(e){}}
+};
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function rng(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
+function shuffle(arr,seed){const r=rng(seed),a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));const x=a[i];a[i]=a[j];a[j]=x}return a}
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function dateEs(d){try{return new Date(d+'T12:00:00Z').toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long',timeZone:'UTC'})}catch(e){return d}}
+function hm(ts){try{return new Date(ts).toLocaleString('es-CL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}catch(e){return ''}}
+function slug(s){return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,28)}
+function rtoken(n){const c='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<n;i++)s+=c[Math.floor(Math.random()*c.length)];return s}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.setAttribute('role','status');t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),1800)}
+async function copy(text){try{await navigator.clipboard.writeText(text);toast('Copiado')}catch(e){const b=document.getElementById('copybox');if(b){b.value=text;b.focus();b.select();toast('Selecciona y copia el texto')}else toast('No se pudo copiar')}}
+
+/* ---------- Estado ---------- */
+const G={V:{n:'home'},F:null,C:null,SV:{},T:LS.get('test',null)};
+function go(n,p){G.V=Object.assign({n:n},p||{});render();window.scrollTo(0,0)}
+function saveT(){LS.set('test',G.T)}
+
+/* ---------- Vacantes y postulantes ---------- */
+const FIX={};
+Object.keys(FIX_RAW).forEach(vid=>{
+ const v=DEMO.find(x=>x.id===vid);
+ FIX[vid]=FIX_RAW[vid].map((r,i)=>{
+  const ans={};v.crit.forEach((c,j)=>{ans[c.id]=r[2][j]});
+  return {id:r[0],name:r[1],ans:ans,rec:r[3],text:r[4],job:r[5],reveal:r[6],fixture:true,pos:i,ts:Date.UTC(2026,9,12,13,0)+i*5.1e6};
+ });
+});
+function allVacs(){return DEMO.concat(LS.get('vacs',[]))}
+function getVac(id){return allVacs().find(v=>v.id===id)}
+function crits(v){return v.crit.map(c=>({id:c.id,t:c.t,b:BANK[c.id]}))}
+function applicants(v){return (FIX[v.id]||[]).concat(LS.get('posts',[]).filter(p=>p.vacId===v.id))}
+function evalA(a,v){return crits(v).map(c=>{const o=c.b.opts.find(o=>o[0]===a.ans[c.id]);return {id:c.id,t:c.t,label:c.b.label,ans:o?o[1]:'Sin responder',ok:!!(o&&o[2])}})}
+function apto(a,v){return evalA(a,v).every(x=>x.ok)}
+function cumple(a,v){const e=evalA(a,v);const ob=e.filter(x=>x.t==='ob'),de=e.filter(x=>x.t==='de');
+ return {ob:ob.filter(x=>x.ok).length,obN:ob.length,de:de.filter(x=>x.ok).length,deN:de.length}}
+function motives(a,v){const out=[];crits(v).forEach(c=>{const o=c.b.opts.find(o=>o[0]===a.ans[c.id]);const ok=o&&o[2];
+  if(!ok&&c.t==='ob')out.push('necesitábamos '+c.b.miss+'.');});
+ crits(v).forEach(c=>{const o=c.b.opts.find(o=>o[0]===a.ans[c.id]);const ok=o&&o[2];
+  if(!ok&&c.t==='de')out.push('priorizamos a '+c.b.pri+'.');});
+ return out.concat(GENERIC)}
+function waLink(a,msg){let d=String(a.phone||'').replace(/\D/g,'');if(d.length===9&&d[0]==='9')d='56'+d;
+ return 'https://wa.me/'+d+'?text='+encodeURIComponent(msg)}
+function closeMsg(a,v,motive){return 'Hola '+a.name+', gracias por postular al cargo de '+v.role+' en '+v.company+'. Esta vez no seguiremos con tu postulación: '+motive+' Si tu situación cambia, puedes volver a postular. Mucho éxito.'}
+function inviteMsg(a,v){return 'Hola '+a.name+', gracias por postular al cargo de '+v.role+' en '+v.company+'. Queremos conocerte: ¿qué día de la próxima semana puedes pasar por el local para conversar 20 minutos?'}
+
+/* ---------- Estado de la bandeja (por vacante o por tarea de prueba) ---------- */
+function getCtx(){
+ if(G.V.n==='work'){const t=curTask();return {vac:getVac(t.vacId),key:t.key,test:true,cond:t.cond,task:t}}
+ const vac=getVac(G.V.vacId);return {vac:vac,key:vac.id,test:false,cond:'ficha'}}
+function bsOf(ctx){
+ let s=LS.get('bs:'+ctx.key,null);const ids=applicants(ctx.vac).map(a=>a.id);
+ if(!s){const seed=ctx.test?hash(G.T.code+ctx.vac.id):Math.floor(Math.random()*4e9);s={seed:seed,dec:{},motive:{},sent:{},viewed:{},i:0,changes:0}}
+ if(!s.rand)s.rand=shuffle(ids,s.seed);
+ const have={};s.rand.forEach(i=>{have[i]=1});ids.forEach(i=>{if(!have[i])s.rand.push(i)});
+ s.order=ids;return s}
+function saveBs(ctx,s){LS.set('bs:'+ctx.key,s)}
+function logEv(ctx,type,id){if(!ctx.test)return;const t=ctx.task;t.log.push([Date.now()-t.start,type,id||'']);if(t.log.length>400)t.log.shift();saveT()}
+function setDec(ctx,s,id,val){const prev=s.dec[id];if(prev&&prev!==val)s.changes++;s.dec[id]=val;logEv(ctx,'dec:'+val,id);saveBs(ctx,s)}
+const entCount=s=>Object.keys(s.dec).filter(k=>s.dec[k]==='ent').length;
+
+/* ---------- Render ---------- */
+const VIEW={};
+function hdr(){return '<header class="top"><button class="brand" data-act="home">Preselección</button><span class="demo">Demo con datos ficticios</span></header>'}
+function render(){
+ const f=VIEW[G.V.n]||VIEW.home;
+ document.getElementById('app').innerHTML=hdr()+f();afterRender();
+}
+function steps(n,tot){let h='<div class="steps">';for(let i=1;i<=tot;i++)h+='<i class="'+(i<=n?'on':'')+'"></i>';return h+'</div>'}
+function scale(k,lo,hi){const v=G.SV[k];let h='<div class="sc">';for(let i=1;i<=5;i++)h+='<button type="button" class="'+(v===i?'sel':'')+'" data-act="scale" data-k="'+k+'" data-v="'+i+'" aria-pressed="'+(v===i)+'">'+i+'</button>';
+ return h+'</div><div class="ends"><span>'+esc(lo)+'</span><span>'+esc(hi)+'</span></div>'}
+function choice(k,opts){return opts.map(o=>'<button type="button" class="opt '+(G.SV[k]===o[0]?'sel':'')+'" data-act="choice" data-k="'+k+'" data-v="'+esc(o[0])+'"><span class="rad"></span><span>'+esc(o[1])+'</span></button>').join('')}
+
+/* ---------- Inicio ---------- */
+VIEW.home=function(){
+ const vs=allVacs();
+ return '<h1>Preselección con criterios previos</h1>'+
+ '<p class="lead">Prototipo del Equipo 7 (TEI 301). El empleador define qué necesita antes de recibir postulaciones. Cada postulante responde una ficha corta y todos reciben una respuesta con motivo.</p>'+
+ '<div class="stack">'+
+ '<button class="big" data-act="nav" data-n="vacList"><b>Soy postulante</b><span>Completa una ficha de 5 minutos para una vacante.</span></button>'+
+ '<button class="big" data-act="nav" data-n="empHome"><b>Soy empleador</b><span>Crea una vacante, revisa postulaciones y cierra con motivo.</span></button>'+
+ '<button class="big" data-act="nav" data-n="testStart"><b>Modo prueba</b><span>Para participantes del test: decide entre postulaciones de ejemplo.</span></button>'+
+ '</div>'+
+ '<h3>Vacantes de ejemplo</h3>'+
+ vs.filter(v=>v.demo).map(v=>'<div class="card"><b>'+esc(v.company)+'</b> <span class="mut">· '+esc(v.comuna)+'</span><div class="small mut">'+esc(v.role)+' · '+esc(v.schedule)+' · '+applicants(v).length+' postulaciones</div></div>').join('')+
+ '<div class="note">Lo que escribas se guarda solo en este navegador. Para probar de punta a punta en un solo equipo: postula como postulante y luego abre la bandeja como empleador.</div>'+
+ '<div class="row wrapx"><button class="btn link" data-act="nav" data-n="team">Resumen del equipo</button><button class="btn link" data-act="reset">Reiniciar demo</button></div>';
+};
+
+/* ---------- Postulante ---------- */
+VIEW.vacList=function(){
+ const vs=allVacs();
+ return '<button class="btn link" data-act="home">‹ Inicio</button><h2>Vacantes abiertas</h2><p class="mut">Elige una para postular.</p>'+
+ vs.map(v=>'<div class="card"><div class="row sp"><div><b>'+esc(v.role)+'</b><div class="small mut">'+esc(v.company)+' · '+esc(v.comuna)+'</div></div><button class="btn p sm" data-act="startFicha" data-v="'+esc(v.id)+'">Postular</button></div></div>').join('');
+};
+function startFicha(vid){
+ G.SV.donePost=0;G.SV.p1=0;G.SV.p2=0;G.SV.p3='';G.SV.p4='';
+ const v=getVac(vid);let d=LS.get('draft:'+vid,null);
+ if(!d)d={vacId:vid,id:v.code+'-'+(1000+Math.floor(Math.random()*9000)),step:0,ans:{},text:'',recName:'',recRel:'',name:'',phone:'',consent:false};
+ G.F=d;go('ficha');
+}
+function saveDraft(){if(G.F&&G.F.step<4)LS.set('draft:'+G.F.vacId,G.F)}
+VIEW.ficha=function(){
+ const F=G.F,v=getVac(F.vacId);if(!F||!v)return VIEW.home();
+ const head='<div class="crumb">'+esc(v.company)+' · '+esc(v.role)+'</div>';
+ if(F.step===0){
+  return '<button class="btn link" data-act="nav" data-n="vacList">‹ Vacantes</button>'+head+'<h1>'+esc(v.role)+'</h1><p class="lead">'+esc(v.company)+' · '+esc(v.comuna)+'. '+esc(v.schedule)+'.</p>'+
+  '<div class="promise"><b>Vas a recibir una respuesta</b>Sí o no, con un motivo, a más tardar el '+esc(dateEs(v.deadline))+'.</div>'+
+  '<h3>Qué vamos a mirar</h3><div class="stack small">'+crits(v).map(c=>'<div class="row"><span class="mark y">'+(c.t==='ob'?'•':'+')+'</span><span>'+esc(c.b.label)+'</span></div>').join('')+'<div class="row"><span class="mark y">•</span><span>Una pregunta que respondes con tus palabras</span></div></div>'+
+  '<button type="button" class="opt '+(F.consent?'sel':'')+'" style="margin-top:18px" data-act="consent" aria-pressed="'+!!F.consent+'"><span class="cb">'+(F.consent?'✓':'')+'</span><span class="small">Acepto que '+esc(v.company)+' use mis respuestas solo para esta vacante. Pedimos solo tu nombre de pila y, si quieres, un teléfono. Puedes pedir que las borremos.</span></button>'+
+  '<button class="btn p block" data-act="fstep" data-s="1" '+(F.consent?'':'disabled')+'>Comenzar · 5 minutos</button><p class="hint" style="text-align:center">Sin cuenta. Se guarda solo mientras escribes.</p>';
+ }
+ if(F.step===1){
+  return head+steps(1,3)+'<h2>Sobre ti y el cargo</h2>'+crits(v).map(c=>'<div class="ql">'+esc(c.b.q)+'</div>'+c.b.opts.map(o=>'<button type="button" class="opt '+(F.ans[c.id]===o[0]?'sel':'')+'" data-act="ans" data-c="'+c.id+'" data-v="'+esc(o[0])+'"><span class="rad"></span><span>'+esc(o[1])+'</span></button>').join('')).join('')+
+  (F.err?'<div class="err">'+esc(F.err)+'</div>':'')+
+  '<div class="row" style="margin-top:14px"><button class="btn" data-act="fstep" data-s="0">Atrás</button><button class="btn p" style="flex:1" data-act="fstep" data-s="2">Siguiente</button></div>';
+ }
+ if(F.step===2){
+  return head+steps(2,3)+'<h2>En tus palabras</h2><div class="ql">'+esc(v.q)+'</div><p class="hint" style="margin-top:-4px">Escríbelo como se lo contarías a alguien. No hay respuesta correcta ni hace falta redactar bien.</p>'+
+  '<textarea class="field" id="ftext" data-bind="F.text" maxlength="600" aria-label="Tu respuesta">'+esc(F.text)+'</textarea><div class="hint" style="text-align:right"><span id="cnt">'+F.text.length+'</span> / 600 · Guardado automáticamente</div>'+
+  '<label class="lab" for="rname">¿Alguien te recomendó? (opcional)</label><input class="field" id="rname" data-bind="F.recName" maxlength="60" placeholder="Nombre" value="'+esc(F.recName)+'">'+
+  '<input class="field" id="rrel" data-bind="F.recRel" maxlength="80" placeholder="Quién es para ti (por ejemplo, jefa anterior)" style="margin-top:8px" value="'+esc(F.recRel)+'">'+
+  '<div class="hint">El local lo verá como un dato tuyo, sin verificar, después de tus respuestas.</div>'+
+  (F.err?'<div class="err">'+esc(F.err)+'</div>':'')+
+  '<div class="row" style="margin-top:14px"><button class="btn" data-act="fstep" data-s="1">Atrás</button><button class="btn p" style="flex:1" data-act="fstep" data-s="3">Siguiente</button></div>';
+ }
+ if(F.step===3){
+  return head+steps(3,3)+'<h2>Contacto y currículum</h2>'+
+  '<label class="lab" for="fname">Tu nombre de pila</label><input class="field" id="fname" data-bind="F.name" maxlength="40" autocomplete="given-name" value="'+esc(F.name)+'">'+
+  '<label class="lab" for="fphone">Teléfono con WhatsApp (opcional)</label><input class="field" id="fphone" data-bind="F.phone" maxlength="20" inputmode="tel" autocomplete="tel" placeholder="9 1234 5678" value="'+esc(F.phone)+'">'+
+  '<div class="hint">Con tu teléfono, el local puede escribirte la respuesta. Sin teléfono, la verás con tu código.</div>'+
+  '<label class="lab" for="fcv">Currículum en PDF (opcional)</label>'+
+  (F.cv?'<div class="card row sp"><div style="min-width:0"><b style="word-break:break-all">'+esc(F.cv.name)+'</b><div class="hint">'+Math.max(1,Math.round(F.cv.size/1024))+' KB</div></div><button class="btn sm" data-act="rmCv">Quitar</button></div>':'<input class="field" type="file" id="fcv" accept="application/pdf,.pdf">')+
+  '<div class="hint">Máximo 3 MB. No necesitamos tu foto, tu edad ni tu estado civil: puedes sacarlos del archivo.</div>'+
+  (F.err?'<div class="err">'+esc(F.err)+'</div>':'')+
+  '<div class="row" style="margin-top:14px"><button class="btn" data-act="fstep" data-s="2">Atrás</button><button class="btn p" style="flex:1" data-act="submitFicha">Enviar mi ficha</button></div>';
+ }
+ return '<div class="mark y" style="width:52px;height:52px;font-size:26px">✓</div><h1>Recibimos tu ficha, '+esc(F.name)+'</h1><p class="lead">'+esc(v.company)+' revisará todas las fichas con los mismos criterios.</p>'+
+  '<div class="card row sp"><div><div class="hint">Tu código de postulación</div><div class="code">'+esc(F.id)+'</div></div><span class="hint">Guárdalo</span></div>'+
+  '<h3>Qué sigue</h3><div class="stack small"><div><b>Ficha enviada</b><div class="mut">'+esc(hm(F.sentAt||Date.now()))+'</div></div><div><b>El local revisa las fichas</b><div class="mut">Hasta el '+esc(dateEs(v.deadline))+'</div></div><div><b>Recibes tu respuesta por mensaje</b><div class="mut">Sí o no, con un motivo</div></div></div>'+
+  (F.cv?'<div class="small mut">Currículum adjunto: '+esc(F.cv.name)+'</div>':'')+'<div class="note">Puedes corregir tu ficha hasta que el local cierre las postulaciones.</div>'+
+  '<div class="stack"><button class="btn p block" data-act="nav" data-n="surveyPost">Contar cómo fue la experiencia · 1 min</button><button class="btn block" data-act="editFicha">Corregir mi ficha</button><button class="btn block" data-act="home">Volver al inicio</button></div>';
+};
+function validateStep(F,v,from){
+ if(from===1){const miss=crits(v).filter(c=>!F.ans[c.id]);if(miss.length)return 'Falta responder: '+miss.map(c=>c.b.label.toLowerCase()).join(', ')+'.'}
+ if(from===2){if(F.text.trim().length<15)return 'Cuéntanos un poco más (al menos una frase).'}
+ return ''}
+
+/* ---------- Empleador ---------- */
+VIEW.empHome=function(){
+ const vs=allVacs();
+ return '<button class="btn link" data-act="home">‹ Inicio</button><h2>Mis vacantes</h2><p class="mut">Cada vacante tiene su propia bandeja privada.</p>'+
+ vs.map(v=>{const n=applicants(v).length,s=LS.get('bs:'+v.id,null),r=s?Object.keys(s.dec).length:0;
+  return '<div class="card"><div class="row sp wrapx"><div style="min-width:0"><b>'+esc(v.role)+'</b><div class="small mut">'+esc(v.company)+' · '+esc(v.comuna)+'</div><div class="small mut">'+n+' postulaciones · '+r+' revisadas</div></div><button class="btn p sm" data-act="openBand" data-v="'+esc(v.id)+'">Abrir bandeja</button></div></div>'}).join('')+
+ '<button class="btn block" style="margin-top:12px" data-act="newVac">Crear una vacante</button>';
+};
+function newCtor(){G.C={step:1,company:'',role:'',comuna:'',schedule:'',deadline:new Date(Date.now()+14*864e5).toISOString().slice(0,10),crit:{},qi:0,err:''};go('ctor')}
+function critCounts(C){const v=Object.values(C.crit);return {ob:v.filter(x=>x==='ob').length,de:v.filter(x=>x==='de').length}}
+VIEW.ctor=function(){
+ const C=G.C;if(!C)return VIEW.empHome();
+ const head='<button class="btn link" data-act="nav" data-n="empHome">‹ Mis vacantes</button><div class="crumb">Nueva vacante · Paso '+Math.min(C.step,3)+' de 3</div>';
+ if(C.step===1){
+  return head+steps(1,3)+'<h2>El cargo</h2>'+
+  '<label class="lab" for="cco">Nombre del local</label><input class="field" id="cco" data-bind="C.company" maxlength="50" placeholder="Por ejemplo, Panadería San José" value="'+esc(C.company)+'">'+
+  '<label class="lab" for="cro">Cargo</label><input class="field" id="cro" data-bind="C.role" maxlength="50" placeholder="Por ejemplo, Ayudante de cocina" value="'+esc(C.role)+'">'+
+  '<label class="lab" for="ccm">Comuna</label><input class="field" id="ccm" data-bind="C.comuna" maxlength="30" value="'+esc(C.comuna)+'">'+
+  '<label class="lab" for="csc">Horario en una frase</label><input class="field" id="csc" data-bind="C.schedule" maxlength="60" placeholder="Por ejemplo, lunes a viernes, mañana" value="'+esc(C.schedule)+'">'+
+  '<label class="lab" for="cdl">Fecha en que responderás a todos</label><input class="field" id="cdl" type="date" data-bind="C.deadline" value="'+esc(C.deadline)+'">'+
+  (C.err?'<div class="err">'+esc(C.err)+'</div>':'')+
+  '<button class="btn p block" style="margin-top:16px" data-act="cstep" data-s="2">Siguiente</button>';
+ }
+ if(C.step===2){
+  const n=critCounts(C);
+  return head+steps(2,3)+'<h2>Qué necesitas para este cargo</h2><p class="mut">Elige del banco. Los obligatorios se revisan primero; los deseables ayudan a desempatar.</p>'+
+  '<div class="row sp"><span class="chip ob">Obligatorios '+n.ob+' de 3</span><span class="chip de">Deseables '+n.de+' de 2</span></div><div style="height:10px"></div>'+
+  Object.keys(BANK).map(id=>{const b=BANK[id],cur=C.crit[id]||'';return '<div class="card"><b>'+esc(b.label)+'</b><div class="small mut">'+esc(b.q)+'</div><div class="row" style="margin-top:8px">'+
+   [['','No usar'],['ob','Obligatorio'],['de','Deseable']].map(o=>'<button type="button" class="btn sm '+(cur===o[0]?'p':'')+'" style="flex:1" data-act="setCrit" data-c="'+id+'" data-t="'+o[0]+'" aria-pressed="'+(cur===o[0])+'">'+o[1]+'</button>').join('')+'</div></div>'}).join('')+
+  '<div class="note">El banco solo incluye criterios permitidos por el Código del Trabajo (art. 2). No hay campos de edad, sexo, estado civil ni apariencia.</div>'+
+  (C.err?'<div class="err">'+esc(C.err)+'</div>':'')+
+  '<div class="row"><button class="btn" data-act="cstep" data-s="1">Atrás</button><button class="btn p" style="flex:1" data-act="cstep" data-s="3">Siguiente</button></div>';
+ }
+ if(C.step===3){
+  return head+steps(3,3)+'<h2>Una pregunta en sus palabras</h2><p class="mut">Cada postulante la responde con texto. Verás su respuesta junto a los criterios.</p>'+
+  QBANK.map((q,i)=>'<button type="button" class="opt '+(C.qi===i?'sel':'')+'" data-act="setQ" data-i="'+i+'"><span class="rad"></span><span>'+esc(q)+'</span></button>').join('')+
+  (C.err?'<div class="err">'+esc(C.err)+'</div>':'')+
+  '<div class="row" style="margin-top:8px"><button class="btn" data-act="cstep" data-s="2">Atrás</button><button class="btn p" style="flex:1" data-act="publishVac">Publicar vacante</button></div>';
+ }
+ const v=C.done;
+ return '<div class="mark y" style="width:52px;height:52px;font-size:26px">✓</div><h1>Vacante publicada</h1><p class="lead">'+esc(v.role)+' · '+esc(v.company)+'</p>'+
+ '<div class="card"><div class="small" style="font-weight:700;color:var(--acc)">Para postulantes · público</div><div class="mono small" style="margin:6px 0;word-break:break-all">[dominio]/v/'+esc(v.slug)+'</div><div class="hint">Así se vería el enlace. En esta demo, el botón de abajo abre el formulario.</div></div>'+
+ '<div class="card"><div class="small" style="font-weight:700;color:var(--amb)">Tu bandeja · privado</div><div class="mono small" style="margin:6px 0;word-break:break-all">[dominio]/b/'+esc(v.token)+'</div><div class="hint">Solo tú lo tienes. No pide cuenta.</div></div>'+
+ '<div class="stack" style="margin-top:12px"><button class="btn p block" data-act="startFicha" data-v="'+esc(v.id)+'">Probar como postulante</button><button class="btn block" data-act="openBand" data-v="'+esc(v.id)+'">Abrir mi bandeja</button></div>';
+};
+
+/* ---------- Currículums (PDF) ---------- */
+const CVdb={mem:{},
+ open(){return new Promise((res,rej)=>{try{const r=indexedDB.open('pcp',1);r.onupgradeneeded=()=>r.result.createObjectStore('cv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})},
+ async put(id,buf){this.mem[id]=buf;try{const d=await this.open();await new Promise((res,rej)=>{const tx=d.transaction('cv','readwrite');tx.objectStore('cv').put(buf,id);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}catch(e){}},
+ async get(id){if(this.mem[id])return this.mem[id];try{const d=await this.open();return await new Promise((res,rej)=>{const r=d.transaction('cv').objectStore('cv').get(id);r.onsuccess=()=>res(r.result||null);r.onerror=()=>rej(r.error)})}catch(e){return null}},
+ async del(id){delete this.mem[id];try{const d=await this.open();await new Promise((res)=>{const tx=d.transaction('cv','readwrite');tx.objectStore('cv').delete(id);tx.oncomplete=res;tx.onerror=res})}catch(e){}}
+};
+function pdfEsc(s){return String(s).replace(/[^\x20-\xFF]/g,'-').replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)')}
+function wrapTxt(s,n){const w=String(s).split(' ');const out=[];let l='';w.forEach(x=>{if((l+' '+x).trim().length>n){out.push(l);l=x}else l=(l+' '+x).trim()});if(l)out.push(l);return out}
+function cvLines(a){return a.reveal.map(k=>{const o=BANK[k].opts.find(o=>o[0]===a.ans[k]);return o&&o[3]?o[3]:''}).filter(Boolean)}
+/* Genera un PDF real y simple con los datos del CV ficticio */
+function genPdf(a){
+ let y=790;const ops=[];
+ const txt=(s,size,font,dy,gray)=>{y-=dy;ops.push((gray==null?'0':gray)+' g BT /'+font+' '+size+' Tf 56 '+y+' Td ('+pdfEsc(s)+') Tj ET')};
+ const rule=()=>{ops.push('0.75 G 0.5 w 56 '+(y-5)+' m 539 '+(y-5)+' l S')};
+ const sec=(t)=>{txt(t,9,'F2',34,0.4);rule()};
+ txt(a.name,24,'F2',0);txt('Currículum',10,'F1',20,0.4);
+ sec('EXPERIENCIA');wrapTxt(a.job,78).forEach(l=>txt(l,11,'F1',20));
+ const ol=cvLines(a);if(ol.length){sec('OTROS DATOS');ol.forEach(l=>txt(l,11,'F1',20))}
+ if(a.rec){sec('REFERENCIA');wrapTxt('Recomendado/a por '+a.rec+'.',78).forEach(l=>txt(l,11,'F1',20))}
+ y=44;txt('Documento de ejemplo de la demo. Datos ficticios.',8,'F1',0,0.5);
+ const content=ops.join('\n'),objs=[];
+ objs[1]='<< /Type /Catalog /Pages 2 0 R >>';objs[2]='<< /Type /Pages /Kids [3 0 R] /Count 1 >>';
+ objs[3]='<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >>';
+ objs[4]='<< /Length '+content.length+' >>\nstream\n'+content+'\nendstream';
+ objs[5]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+ objs[6]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+ let out='%PDF-1.4\n';const offs=[];for(let i=1;i<=6;i++){offs[i]=out.length;out+=i+' 0 obj\n'+objs[i]+'\nendobj\n'}
+ const x=out.length;out+='xref\n0 7\n0000000000 65535 f \n'+offs.slice(1).map(o=>String(o).padStart(10,'0')+' 00000 n \n').join('')+'trailer\n<< /Size 7 /Root 1 0 R >>\nstartxref\n'+x+'\n%%EOF';
+ const u=new Uint8Array(out.length);for(let i=0;i<out.length;i++)u[i]=out.charCodeAt(i)&255;return u;
+}
+const hasCv=a=>!!(a&&(a.fixture||a.cv));
+async function pdfBytes(a){if(!a)return null;if(a.fixture)return genPdf(a);const b=await CVdb.get(a.id);return b?new Uint8Array(b):null}
+async function pdfReady(){for(let i=0;i<40&&!window.pdfjsLib;i++)await new Promise(r=>setTimeout(r,150));return window.pdfjsLib||null}
+function cvHtml(a){const ol=cvLines(a);return '<div class="cvdoc"><h2>'+esc(a.name)+'</h2><div class="mut small">Currículum</div><h4>Experiencia</h4><div>'+esc(a.job)+'</div>'+(ol.length?'<h4>Otros datos</h4>'+ol.map(l=>'<div>'+esc(l)+'</div>').join(''):'')+(a.rec?'<h4>Referencia</h4><div>Recomendado/a por '+esc(a.rec)+'.</div>':'')+'</div>'}
+async function showPdf(el){
+ const v=getVac(el.dataset.vac);const a=v&&applicants(v).find(x=>x.id===el.dataset.pdf);
+ el.innerHTML='<div class="hint" style="padding:14px">Cargando currículum…</div>';
+ const b=await pdfBytes(a);if(!el.isConnected)return;
+ if(!b){el.innerHTML='<div class="note" style="margin:10px">Esta persona no adjuntó currículum.</div>';return}
+ const lib=await pdfReady();
+ if(lib){try{
+  lib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const doc=await Promise.race([lib.getDocument({data:b.slice(0)}).promise,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),15000))]);
+  if(!el.isConnected)return;el.innerHTML='';
+  const w=el.clientWidth||340,n=Math.min(doc.numPages,3);
+  for(let i=1;i<=n;i++){const pg=await doc.getPage(i);const v0=pg.getViewport({scale:1});const vp=pg.getViewport({scale:(w/v0.width)*Math.min(2,window.devicePixelRatio||1)});
+   const c=document.createElement('canvas');c.width=Math.floor(vp.width);c.height=Math.floor(vp.height);el.appendChild(c);await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise}
+  if(doc.numPages>n){const t=document.createElement('div');t.className='hint';t.style.padding='8px 12px';t.textContent='Se muestran las primeras '+n+' páginas de '+doc.numPages+'. Descarga el PDF para verlo completo.';el.appendChild(t)}
+  return}catch(e){console.warn('pdf.js:',e&&e.message)}}
+ if(!el.isConnected)return;
+ el.innerHTML=a.fixture?cvHtml(a):'<div class="note" style="margin:10px">No se pudo mostrar el PDF aquí. Usa Descargar para verlo.</div>';
+}
+let IO=null;
+function watchCards(){
+ if(IO){IO.disconnect();IO=null}
+ const els=document.querySelectorAll('.pcard[data-id]');if(!els.length||!('IntersectionObserver' in window))return;
+ let ctx;try{ctx=getCtx()}catch(e){return}
+ const timers={};
+ IO=new IntersectionObserver(es=>es.forEach(en=>{const id=en.target.dataset.id;
+  if(en.isIntersecting){if(!timers[id])timers[id]=setTimeout(()=>{markViewed(ctx,bsOf(ctx),id)},1200)}
+  else if(timers[id]){clearTimeout(timers[id]);delete timers[id]}}),{threshold:[0.2]});
+ els.forEach(e=>IO.observe(e));
+}
+function afterRender(){document.querySelectorAll('[data-pdf]').forEach(showPdf);watchCards()}
+async function dlCv(id){
+ const ctx=getCtx(),a=applicants(ctx.vac).find(x=>x.id===id);const b=await pdfBytes(a);
+ if(!b){toast('Esta persona no adjuntó currículum');return}
+ logEv(ctx,'cv:dl',id);
+ const fname='CV-'+slug(a.name)+'-'+a.id+'.pdf';
+ try{const d=window.claude&&window.claude.use?await window.claude.use('downloads'):null;
+  if(d){await d.save({filename:fname,data:b});toast('Currículum guardado');return}
+  /* fuera de claude.ai: descarga normal del navegador */
+  const u=URL.createObjectURL(new Blob([b],{type:'application/pdf'}));
+  const l=document.createElement('a');l.href=u;l.download=fname;document.body.appendChild(l);l.click();l.remove();
+  setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Currículum descargado')}
+ catch(e){if(!e||e.code!=='declined')toast('No se pudo descargar')}
+}
+
+/* ---------- Bandeja ---------- */
+function openBand(vid){G.lastVac=vid;G.SV.doneEmp=0;G.SV.e1=0;G.SV.e2='';G.SV.e3=0;G.SV.e4='';G.SV.e5='';G.V={n:'band',vacId:vid,tab:'rev',mode:null,cvOpen:null};render();window.scrollTo(0,0)}
+const listIds=(ctx,s)=>(ctx.test&&ctx.cond==='ficha')?s.rand:s.order;
+const modeOf=ctx=>G.V.mode||(ctx.cond==='ctrl'?'list':'focus');
+function modeBar(ctx){const m=modeOf(ctx);const b=(k,l)=>'<button class="tab '+(m===k?'on':'')+'" data-act="mode" data-m="'+k+'" aria-pressed="'+(m===k)+'">'+l+'</button>';
+ return '<div class="tabs" style="margin-top:0">'+b('focus','Al azar · modo focus')+b('list','Lista')+'</div>'}
+function bandHead(ctx,s,tab){
+ const v=ctx.vac,apl=applicants(v),pre=apl.filter(a=>s.dec[a.id]==='pre'||s.dec[a.id]==='ent').length,rev=Object.keys(s.dec).length;
+ const t=(k,l)=>'<button class="tab '+(tab===k?'on':'')+'" data-act="tab" data-t="'+k+'" aria-pressed="'+(tab===k)+'">'+l+'</button>';
+ return (ctx.test?'':'<button class="btn link" data-act="nav" data-n="empHome">‹ Mis vacantes</button>')+
+ '<div class="crumb">'+esc(v.company)+' · '+esc(v.role)+'</div><h2>Bandeja</h2>'+
+ '<div class="tabs">'+t('rev','Revisar '+rev+'/'+apl.length)+t('cmp','Comparar '+pre)+(ctx.test?'':t('cie','Cierre'))+'</div>';
+}
+function dots(a,v){return evalA(a,v).map(x=>'<span class="mark s '+(x.ok?'y':'n')+'" title="'+esc(x.label)+'" aria-label="'+esc(x.label)+(x.ok?': cumple':': no cumple')+'">'+(x.ok?'✓':'✕')+'</span>').join('')}
+function critRows(a,v){
+ return evalA(a,v).map(x=>'<div class="crit"><span class="mark '+(x.ok?'y':'n')+'" aria-label="'+(x.ok?'Cumple':'No cumple')+'">'+(x.ok?'✓':'✕')+'</span><div class="t"><b>'+esc(x.label)+'</b><span>'+esc(x.ans)+'</span></div><span class="chip '+x.t+'">'+(x.t==='ob'?'Obligatorio':'Deseable')+'</span></div>').join('');
+}
+function banner(a,v){
+ const c=cumple(a,v),lvl=c.ob<c.obN?'no':(c.de<c.deN?'mid':'ok');
+ const head={ok:'Cumple todos los criterios',mid:'Cumple los obligatorios',no:'No cumple un obligatorio'}[lvl];
+ return '<div class="banner '+lvl+'"><b>'+head+'</b><span class="small">'+c.ob+' de '+c.obN+' obligatorios'+(c.deN?' · '+c.de+' de '+c.deN+' deseables':'')+'</span></div>';
+}
+const STAT={pre:['Preseleccionado/a','ok'],espera:['En espera',''],cierre:['Por cerrar','no'],ent:['A entrevistar','ok']};
+function cvBody(a,v){
+ if(!hasCv(a))return '<div class="small mut">No adjuntó currículum.</div>';
+ const open=G.V.cvOpen===a.id;
+ if(!open)return '<button class="btn p block" data-act="cvToggle" data-id="'+esc(a.id)+'" aria-expanded="false">Abrir currículum</button>';
+ return '<div class="pdfbox" data-pdf="'+esc(a.id)+'" data-vac="'+esc(v.id)+'"></div><div class="row" style="margin-top:10px"><button class="btn" style="flex:1" data-act="dl" data-id="'+esc(a.id)+'">Descargar PDF</button><button class="btn" data-act="cvToggle" data-id="'+esc(a.id)+'" aria-expanded="true">Cerrar</button></div>';
+}
+function bubbleCard(a,v,s){
+ const d=s.dec[a.id],st=STAT[d],c=cumple(a,v),lvl=c.ob<c.obN?'no':(c.de<c.deN?'de':'ok');
+ const sum=c.ob+' de '+c.obN+' obligatorios'+(c.deN?' · '+c.de+' de '+c.deN+' deseables':'');
+ return '<div class="pcard" data-id="'+esc(a.id)+'"><div class="who"><b>'+esc(a.name)+'</b><span class="hint">'+esc(a.id)+' · '+esc(hm(a.ts))+'</span></div>'+
+ (st?'<div style="margin-bottom:2px"><span class="chip '+st[1]+'">'+st[0]+'</span></div>':'')+
+ '<div class="bubble b1"><div class="bh"><span>Requisitos</span><span class="chip '+lvl+'">'+sum+'</span></div>'+critRows(a,v)+'</div>'+
+ '<div class="bubble b2"><div class="bh"><span>La pregunta</span></div><div class="qbox">'+esc(v.q)+'</div><div class="bh" style="margin-top:14px"><span>Su respuesta</span></div><div class="quote big">'+esc(a.text)+'</div>'+
+ (a.rec?'<div class="rec"><b>Recomendación declarada</b>'+esc(a.rec)+'. Dato del postulante, sin verificar.</div>':'')+'</div>'+
+ '<div class="bubble b3"><div class="bh"><span>Currículum</span></div>'+cvBody(a,v)+'</div>'+
+ '<div class="acts"><button class="btn '+(d==='espera'?'p':'')+'" data-act="dec" data-id="'+esc(a.id)+'" data-d="espera">En espera</button><button class="btn '+(d==='cierre'?'p':'')+'" data-act="dec" data-id="'+esc(a.id)+'" data-d="cierre">Cerrar con motivo</button><button class="btn '+(d==='pre'||d==='ent'?'p':'')+'" data-act="dec" data-id="'+esc(a.id)+'" data-d="pre">Preseleccionar</button></div></div>';
+}
+function cvCard(a,v,s){
+ const on=s.dec[a.id]==='ent',n=entCount(s);
+ return '<div class="pcard" data-id="'+esc(a.id)+'"><div class="who"><b>'+esc(a.name)+'</b><span class="hint">'+esc(a.id)+'</span></div>'+(on?'<div style="margin-bottom:2px"><span class="chip ok">Elegido/a</span></div>':'')+
+ '<div class="bubble b1"><div class="bh"><span>Último trabajo</span></div><div>'+esc(a.job)+'</div>'+(a.rec?'<div class="rec"><b>Recomendación</b>Recomendado/a por '+esc(a.rec)+'.</div>':'')+'</div>'+
+ '<div class="bubble b3"><div class="bh"><span>Currículum</span></div>'+cvBody(a,v)+'</div>'+
+ '<button class="btn block '+(on?'p':'')+'" style="margin-top:10px" data-act="toggleEnt" data-id="'+esc(a.id)+'" '+(!on&&n>=3?'disabled':'')+'>'+(on?'Quitar de mi lista':'Marcar para entrevistar')+'</button></div>';
+}
+function markViewed(ctx,s,id){if(!s.viewed[id]){s.viewed[id]=1;saveBs(ctx,s);logEv(ctx,'view',id)}}
+function focusNav(s,n){const i=s.i;return '<div class="row sp" style="margin-top:10px"><button class="btn sm" data-act="nav1" data-d="-1" '+(i<=0?'disabled':'')+'>‹ Anterior</button>'+
+ (i>=n-1?'<button class="btn p sm" data-act="tab" data-t="cmp">Ir a comparar</button>':'<button class="btn sm" data-act="nav1" data-d="1">Siguiente ›</button>')+'</div>'}
+function revTab(ctx,s){
+ const v=ctx.vac,apl=applicants(v),byId={};apl.forEach(a=>{byId[a.id]=a});
+ if(!apl.length)return '<div class="card"><b>Aún no hay postulaciones</b><p class="mut small" style="margin:6px 0 0">Abre la vacante como postulante y envía una ficha para verla aquí.</p></div>';
+ const mode=modeOf(ctx);
+ if(mode==='list'){
+  const ids=listIds(ctx,s).filter(id=>byId[id]),done=Object.keys(s.dec).length;
+  return modeBar(ctx)+'<div class="row sp"><span class="small mut">'+(ctx.test?'':'En orden de llegada · ')+ids.length+' postulaciones</span><span class="small mut">'+(ids.length-done)+' sin revisar</span></div><div class="bar" style="margin:6px 0 4px"><i style="width:'+Math.round(100*done/ids.length)+'%"></i></div>'+
+   ids.map(id=>bubbleCard(byId[id],v,s)).join('');
+ }
+ const order=s.rand.filter(i=>byId[i]),n=order.length;
+ const i=Math.min(Math.max(s.i,0),n-1);s.i=i;const a=byId[order[i]];markViewed(ctx,s,a.id);
+ const done=Object.keys(s.dec).length;
+ return modeBar(ctx)+'<div class="row sp"><span class="small mut">Perfil '+(i+1)+' de '+n+'</span><span class="small mut">'+(n-done)+' sin revisar</span></div><div class="bar" style="margin:6px 0 12px"><i style="width:'+Math.round(100*done/n)+'%"></i></div>'+
+ bubbleCard(a,v,s)+focusNav(s,n);
+}
+function cmpTab(ctx,s){
+ const v=ctx.vac,apl=applicants(v),byId={};apl.forEach(a=>{byId[a.id]=a});
+ const list=listIds(ctx,s).map(id=>byId[id]).filter(a=>a&&(s.dec[a.id]==='pre'||s.dec[a.id]==='ent'));
+ const wait=apl.filter(a=>s.dec[a.id]==='espera');const un=apl.length-Object.keys(s.dec).length;
+ const n=entCount(s);
+ let h='<p class="mut small">Compara a quienes preseleccionaste y elige a 3 para entrevistar.'+(un?' Aún tienes '+un+' sin revisar.':'')+'</p>';
+ if(!list.length)h+='<div class="card"><b>No hay preseleccionados todavía</b><p class="small mut" style="margin:6px 0 0">Vuelve a Revisar y presiona Preseleccionar en las fichas que te interesen.</p></div>';
+ else{
+  const cs=crits(v);
+  h+='<div class="qbox" style="margin-bottom:10px"><span class="hint" style="display:block;font-family:var(--f-body);font-weight:400">La pregunta</span>'+esc(v.q)+'</div>';
+  h+='<div class="tblw"><table class="cmp"><thead><tr><th></th>'+list.map(a=>'<th>'+esc(a.name)+'<small>'+esc(a.id)+'</small></th>').join('')+'</tr></thead><tbody>';
+  cs.forEach(c=>{h+='<tr><th>'+esc(c.b.label)+'<small>'+(c.t==='ob'?'Obligatorio':'Deseable')+'</small></th>'+list.map(a=>{const o=c.b.opts.find(o=>o[0]===a.ans[c.id]);const ok=o&&o[2];return '<td><span class="mark '+(ok?'y':'n')+'">'+(ok?'✓':'✕')+'</span> '+esc(o?o[1]:'')+'</td>'}).join('')+'</tr>'});
+  h+='<tr><th>Su respuesta</th>'+list.map(a=>'<td class="words">'+esc(a.text)+'</td>').join('')+'</tr>';
+  h+='<tr><th>Recomendación<small>declarada</small></th>'+list.map(a=>'<td>'+(a.rec?esc(a.rec):'<span class="mut">Ninguna</span>')+'</td>').join('')+'</tr>';
+  h+='<tr><th>Currículum</th>'+list.map(a=>'<td>'+(hasCv(a)?'<button class="btn sm" data-act="dl" data-id="'+esc(a.id)+'">Descargar</button>':'<span class="mut">Sin PDF</span>')+'</td>').join('')+'</tr>';
+  h+='<tr><th>Entrevistar</th>'+list.map(a=>{const on=s.dec[a.id]==='ent';const full=!on&&n>=3;return '<td><button class="btn sm '+(on?'p':'')+'" data-act="toggleEnt" data-id="'+esc(a.id)+'" '+(full?'disabled':'')+'>'+(on?'Elegido/a':'Elegir')+'</button></td>'}).join('')+'</tr></tbody></table></div>';
+ }
+ h+='<div class="row sp" style="margin-top:12px"><span class="small"><b>'+n+' de 3</b> elegidos</span>'+(n>=3?'<span class="hint">Quita a alguien para elegir a otra persona.</span>':'')+'</div>';
+ if(wait.length)h+='<h3>En espera</h3>'+wait.map(a=>'<div class="cvrow"><div class="nm"><b>'+esc(a.name)+'</b><span>'+cumple(a,v).ob+'/'+cumple(a,v).obN+' obligatorios</span></div><button class="btn sm" data-act="dec" data-id="'+esc(a.id)+'" data-d="pre" data-stay="1">Pasar a preseleccionados</button></div>').join('');
+ if(ctx.test)h+='<button class="btn p block" style="margin-top:16px" data-act="finishTask" '+(n===3?'':'disabled')+'>Terminé: entrevistar a estas 3 personas</button>';
+ else h+='<button class="btn p block" style="margin-top:16px" data-act="tab" data-t="cie">Ir al cierre</button>';
+ return h;
+}
+function cieTab(ctx,s){
+ const v=ctx.vac,apl=applicants(v);
+ if(!apl.length)return '<div class="card"><b>Aún no hay postulaciones</b></div>';
+ const ent=apl.filter(a=>s.dec[a.id]==='ent'),rest=apl.filter(a=>s.dec[a.id]!=='ent');
+ const sentN=Object.keys(s.sent).length;
+ let h='<p class="mut small">Todas las personas reciben una respuesta con motivo. Tú presionas enviar en tu chat.</p>';
+ h+='<div class="row sp"><span class="small"><b>'+sentN+' de '+apl.length+'</b> respuestas enviadas</span><div class="bar" style="width:40%"><i style="width:'+Math.round(100*sentN/apl.length)+'%"></i></div></div>';
+ if(ent.length){h+='<h3>A entrevistar</h3>'+ent.map(a=>{const msg=inviteMsg(a,v);return '<div class="card"><div class="row sp"><b>'+esc(a.name)+'</b>'+(s.sent[a.id]?'<span class="chip ok">Enviado</span>':'')+'</div><div class="quote small" style="margin:8px 0">'+esc(msg)+'</div><div class="row wrapx"><a class="btn sm p" href="'+esc(waLink(a,msg))+'" target="_blank" rel="noopener">Abrir mensaje en el chat</a><button class="btn sm" data-act="sent" data-id="'+esc(a.id)+'">'+(s.sent[a.id]?'Desmarcar':'Marcar enviado')+'</button></div></div>'}).join('')}
+ h+='<h3>Cerrar con motivo ('+rest.length+')</h3>';
+ h+=rest.map(a=>{const ms=motives(a,v),mi=Math.min(s.motive[a.id]||0,ms.length-1),msg=closeMsg(a,v,ms[mi]);
+  return '<div class="card"><div class="row sp"><b>'+esc(a.name)+'</b>'+(s.sent[a.id]?'<span class="chip ok">Enviado</span>':'')+'</div>'+
+  '<label class="lab" for="m-'+esc(a.id)+'" style="margin-top:8px">Motivo</label><select class="field" id="m-'+esc(a.id)+'" data-act="motive" data-id="'+esc(a.id)+'">'+ms.map((m,i)=>'<option value="'+i+'" '+(i===mi?'selected':'')+'>'+esc(m.charAt(0).toUpperCase()+m.slice(1))+'</option>').join('')+'</select>'+
+  '<div class="quote small" style="margin:8px 0">'+esc(msg)+'</div><div class="row wrapx"><a class="btn sm p" href="'+esc(waLink(a,msg))+'" target="_blank" rel="noopener">Abrir mensaje en el chat</a><button class="btn sm" data-act="sent" data-id="'+esc(a.id)+'">'+(s.sent[a.id]?'Desmarcar':'Marcar enviado')+'</button></div></div>'}).join('');
+ h+='<div class="note">Se abre tu chat con la persona y el mensaje ya escrito. Las fichas de ejemplo no tienen teléfono real, así que el chat se abre sin destinatario.</div>';
+ h+='<button class="btn block" data-act="nav" data-n="surveyEmp">Contar cómo fue decidir · 2 min</button>';
+ return h;
+}
+VIEW.band=function(){
+ const ctx=getCtx(),s=bsOf(ctx),tab=G.V.tab||'rev';
+ return bandHead(ctx,s,tab)+(tab==='rev'?revTab(ctx,s):tab==='cmp'?cmpTab(ctx,s):cieTab(ctx,s));
+};
+
+/* ---------- Encuestas ---------- */
+function saveSurvey(o){const a=LS.get('surveys',[]);o.ts=Date.now();a.push(o);LS.set('surveys',a)}
+VIEW.surveyPost=function(){
+ const F=G.F;
+ if(G.SV.donePost)return '<h2>Gracias</h2><p class="lead">Tus respuestas nos ayudan a mejorar el prototipo.</p><button class="btn block" data-act="home">Volver al inicio</button>';
+ return '<div class="crumb">Encuesta · 1 minuto · Sin nombre</div><h2>Cuéntanos cómo fue postular</h2>'+
+ '<div class="ql">Antes de enviar, ¿tenías claro que te iban a responder?</div>'+scale('p1','Nada claro','Totalmente claro')+
+ '<div class="ql">¿Cuánto esfuerzo fue completar la ficha?</div>'+scale('p2','Muy poco','Demasiado')+
+ '<div class="ql">¿Cómo se compara con enviar un currículum?</div>'+choice('p3',[['peor','Más trabajo, sin ventaja'],['igual','Parecido'],['mejor','Mejor: me siento más considerado/a']])+
+ '<div class="ql">¿Qué cambiarías? (opcional)</div><textarea class="field" id="p4" data-bind="SV.p4" style="min-height:80px">'+esc(G.SV.p4||'')+'</textarea>'+
+ '<button class="btn p block" style="margin-top:16px" data-act="sendSurvey" data-k="post">Enviar encuesta</button>';
+};
+VIEW.surveyEmp=function(){
+ if(G.SV.doneEmp)return '<h2>Gracias</h2><p class="lead">Tus respuestas nos ayudan a mejorar el prototipo.</p><button class="btn block" data-act="home">Volver al inicio</button>';
+ return '<div class="crumb">Encuesta para el local · 2 minutos</div><h2>Cuéntanos cómo fue decidir</h2>'+
+ '<div class="ql">¿Qué tan seguro/a estás de tu decisión?</div>'+scale('e1','Nada seguro/a','Muy seguro/a')+
+ '<div class="ql">Comparado con revisar currículums sueltos, decidir fue:</div>'+choice('e2',[['mas-dificil','Más difícil'],['igual','Igual'],['mas-claro','Más claro']])+
+ '<div class="ql">¿Los motivos prehechos te sirvieron para cerrar?</div>'+scale('e3','No sirvieron','Muy útiles')+
+ '<div class="ql">¿La usarías en tu próxima vacante?</div>'+choice('e4',[['si','Sí'],['tal-vez','Tal vez'],['no','No']])+
+ '<div class="ql">¿Qué faltó? (opcional)</div><textarea class="field" id="e5" data-bind="SV.e5" style="min-height:80px">'+esc(G.SV.e5||'')+'</textarea>'+
+ '<button class="btn p block" style="margin-top:16px" data-act="sendSurvey" data-k="emp">Enviar encuesta</button>';
+};
+
+/* ---------- Modo prueba ---------- */
+const PLAN=[[['pehuen','ctrl'],['aromos','ficha']],[['aromos','ctrl'],['pehuen','ficha']],[['pehuen','ficha'],['aromos','ctrl']],[['aromos','ficha'],['pehuen','ctrl']]];
+function planFor(code){const m=/(\d+)/.exec(code);const n=m?+m[1]:1;return PLAN[((n-1)%4+4)%4]}
+function curTask(){return G.T.tasks[G.T.ti]}
+function startTest(code){
+ code=String(code||'').trim().toUpperCase();
+ if(!/^P\d{1,2}$/.test(code)){G.SV.tErr='Escribe tu código, por ejemplo P3.';render();return}
+ G.SV.tErr='';G.SV.f1='';G.SV.f2='';
+ G.T={code:code,step:'brief',ti:0,final:null,tasks:planFor(code).map((p,i)=>({vacId:p[0],cond:p[1],key:'t:'+code+':'+p[0]+':'+p[1],start:0,end:0,log:[],m:null,conf:0,fac:0,com:''}))};
+ saveT();go('testBrief');
+}
+VIEW.testStart=function(){
+ const T=G.T;
+ return '<button class="btn link" data-act="home">‹ Inicio</button><span class="chip ob">Modo prueba</span><h1>Probemos cómo decides</h1>'+
+ '<p class="lead">Vas a elegir a quién entrevistar en dos vacantes de ejemplo. Los datos son ficticios.</p>'+
+ (T&&T.step!=='done'?'<div class="card"><b>Tienes una prueba en curso ('+esc(T.code)+')</b><div class="row" style="margin-top:8px"><button class="btn p sm" data-act="resumeTest">Continuar</button></div></div>':'')+
+ '<label class="lab" for="tcode">Tu código de participante</label><input class="field mono" id="tcode" maxlength="3" autocapitalize="characters" placeholder="P1" data-bind="SV.tcode" value="'+esc(G.SV.tcode||'')+'" style="font-size:20px;letter-spacing:.08em">'+
+ (G.SV.tErr?'<div class="err">'+esc(G.SV.tErr)+'</div>':'')+
+ '<h3>Cómo funciona</h3><div class="stack small"><div>1. Revisa las postulaciones como lo harías de verdad.</div><div>2. Elige a 3 personas para entrevistar.</div><div>3. Responde 2 preguntas al final. Dura unos 20 minutos en total.</div></div>'+
+ '<button class="btn p block" style="margin-top:16px" data-act="beginTest">Comenzar</button><p class="hint" style="text-align:center">Registramos tus clics y el tiempo, nunca tu nombre.</p>';
+};
+function briefBlock(v){
+ return '<div class="card"><b>'+esc(v.role)+'</b> · '+esc(v.company)+' ('+esc(v.comuna)+')<div class="small mut">'+esc(v.schedule)+'</div><h3>Lo que busca el local</h3>'+
+ crits(v).map(c=>'<div class="crit"><span class="mark y">'+(c.t==='ob'?'•':'+')+'</span><div class="t"><b>'+esc(c.b.label)+'</b></div><span class="chip '+c.t+'">'+(c.t==='ob'?'Obligatorio':'Deseable')+'</span></div>').join('')+'</div>';
+}
+VIEW.testBrief=function(){
+ const T=G.T,t=curTask(),v=getVac(t.vacId);
+ return '<div class="crumb">Prueba '+esc(T.code)+' · Tarea '+(T.ti+1)+' de '+T.tasks.length+'</div><h2>Eres el dueño o la dueña de '+esc(v.company)+'</h2>'+
+ '<p>Necesitas contratar a una persona. Tienes 20 postulaciones y debes elegir a <b>3</b> para entrevistar.</p>'+briefBlock(v)+
+ '<div class="note">'+(t.cond==='ctrl'?'Las postulaciones llegaron como currículums, en el orden en que llegaron. Ábrelos como lo harías normalmente y marca a quienes quieras entrevistar.':'Las postulaciones llegaron como fichas. Revisa todas en una primera pasada y luego compara a quienes preseleccionaste.')+'</div>'+
+ '<button class="btn p block" data-act="beginTask">Comenzar la tarea</button>';
+};
+VIEW.work=function(){
+ const t=curTask(),v=getVac(t.vacId);
+ const brief='<details class="brief"><summary>Lo que busca el local</summary>'+crits(v).map(c=>'<div class="small" style="margin-top:6px"><span class="chip '+c.t+'">'+(c.t==='ob'?'Obligatorio':'Deseable')+'</span> '+esc(c.b.label)+'</div>').join('')+'<div class="small mut" style="margin-top:6px">Elige a 3 para entrevistar.</div></details>';
+ if(t.cond==='ctrl')return brief+ctrlView(t,v);
+ return brief+VIEW.band();
+};
+function ctrlView(t,v){
+ const ctx=getCtx(),s=bsOf(ctx),apl=applicants(v),byId={};apl.forEach(a=>{byId[a.id]=a});const n=entCount(s),mode=modeOf(ctx);
+ let h=modeBar(ctx);
+ if(mode==='list'){
+  const ids=s.order.filter(id=>byId[id]);
+  h+='<div class="row sp"><span class="small mut">En el orden en que llegaron</span><span class="small mut">Elegidos <b>'+n+' de 3</b></span></div>'+ids.map(id=>cvCard(byId[id],v,s)).join('');
+ }else{
+  const order=s.rand.filter(i=>byId[i]),m=order.length,i=Math.min(Math.max(s.i,0),m-1);s.i=i;const a=byId[order[i]];markViewed(ctx,s,a.id);
+  const seen=Object.keys(s.viewed).length;
+  h+='<div class="row sp"><span class="small mut">Currículum '+(i+1)+' de '+m+'</span><span class="small mut">Elegidos <b>'+n+' de 3</b></span></div><div class="bar" style="margin:6px 0 4px"><i style="width:'+Math.round(100*seen/m)+'%"></i></div>'+
+   cvCard(a,v,s)+
+   '<div class="row sp" style="margin-top:10px"><button class="btn sm" data-act="nav1" data-d="-1" '+(i<=0?'disabled':'')+'>‹ Anterior</button><button class="btn sm" data-act="nav1" data-d="1" '+(i>=m-1?'disabled':'')+'>Siguiente ›</button></div>';
+ }
+ return h+'<button class="btn p block" style="margin-top:16px" data-act="finishTask" '+(n===3?'':'disabled')+'>Terminé: entrevistar a estas 3 personas</button>';
+}
+function metrics(t,v){
+ const s=LS.get('bs:'+t.key,{dec:{},viewed:{},changes:0});const apl=applicants(v);
+ const chosen=Object.keys(s.dec).filter(k=>s.dec[k]==='ent');
+ const g=id=>apl.find(a=>a.id===id);
+ return {chosen:chosen,a:chosen.filter(id=>apto(g(id),v)).length,q1:chosen.filter(id=>g(id).pos<5).length,
+  rn:chosen.filter(id=>g(id).rec&&!apto(g(id),v)).length,cob:Object.keys(s.viewed).length,ch:s.changes,sec:Math.round((t.end-t.start)/1000)}}
+VIEW.testAfter=function(){
+ const T=G.T,t=curTask();
+ return '<div class="crumb">Prueba '+esc(T.code)+' · Tarea '+(T.ti+1)+' de '+T.tasks.length+'</div><h2>Dos preguntas rápidas</h2>'+
+ '<div class="ql">¿Qué tan seguro/a estás de tu elección?</div>'+scale('c1','Nada seguro/a','Muy seguro/a')+
+ '<div class="ql">¿Qué tan fácil fue decidir?</div>'+scale('c2','Muy difícil','Muy fácil')+
+ '<div class="ql">¿Algo que te haya molestado o ayudado? (opcional)</div><textarea class="field" id="c3" data-bind="SV.c3" style="min-height:80px">'+esc(G.SV.c3||'')+'</textarea>'+
+ (G.SV.cErr?'<div class="err">'+esc(G.SV.cErr)+'</div>':'')+
+ '<button class="btn p block" style="margin-top:16px" data-act="afterTask">'+(T.ti+1<T.tasks.length?'Siguiente tarea':'Continuar')+'</button>';
+};
+VIEW.testFinal=function(){
+ return '<div class="crumb">Prueba '+esc(G.T.code)+' · Cierre</div><h2>Última pregunta</h2>'+
+ '<div class="ql">Para una vacante real, ¿con cuál preferirías decidir?</div>'+choice('f1',[['cv','Con currículums'],['ficha','Con fichas de criterios'],['igual','Me da lo mismo']])+
+ '<div class="ql">¿Qué cambiarías de las fichas? (opcional)</div><textarea class="field" id="f2" data-bind="SV.f2" style="min-height:90px">'+esc(G.SV.f2||'')+'</textarea>'+
+ (G.SV.fErr?'<div class="err">'+esc(G.SV.fErr)+'</div>':'')+
+ '<button class="btn p block" style="margin-top:16px" data-act="finishTest">Terminar</button>';
+};
+function resultLine(T){
+ return JSON.stringify({p:T.code,t:T.tasks.map(t=>({v:t.vacId,c:t.cond,s:t.m.sec,a:t.m.a,q1:t.m.q1,rn:t.m.rn,cob:t.m.cob,ch:t.m.ch,conf:t.conf,fac:t.fac,ids:t.m.chosen})),pref:T.final&&T.final.pref,com:T.final&&T.final.com||''});
+}
+VIEW.testDone=function(){
+ const T=G.T,line=resultLine(T);
+ return '<div class="mark y" style="width:52px;height:52px;font-size:26px">✓</div><h1>Gracias, '+esc(T.code)+'</h1><p class="lead">Terminaste la prueba. Copia este bloque y envíaselo al equipo.</p>'+
+ '<textarea class="field mono" id="copybox" readonly style="min-height:130px;font-size:12px">'+esc(line)+'</textarea>'+
+ '<div class="stack" style="margin-top:10px"><button class="btn p block" data-act="copyRes">Copiar resultados</button><button class="btn block" data-act="home">Volver al inicio</button></div>';
+};
+
+/* ---------- Resumen del equipo ---------- */
+function parseLines(txt){const out=[];String(txt||'').split(/\n+/).forEach(l=>{l=l.trim();if(!l)return;try{const o=JSON.parse(l);if(o&&o.p&&o.t)out.push(o)}catch(e){}});return out}
+const avg=a=>a.length?(a.reduce((x,y)=>x+y,0)/a.length):null;
+const f1=x=>x==null?'–':(Math.round(x*10)/10).toString().replace('.',',');
+VIEW.team=function(){
+ const raw=G.SV.paste!=null?G.SV.paste:'';const rows=parseLines(raw);
+ let flat=[];rows.forEach(r=>r.t.forEach(t=>flat.push(Object.assign({p:r.p},t))));
+ const grp=c=>flat.filter(x=>x.c===c);
+ const summ=c=>{const g=grp(c);return '<tr><th>'+(c==='ctrl'?'Currículums':'Fichas')+'</th><td>'+g.length+'</td><td>'+f1(avg(g.map(x=>x.a)))+'</td><td>'+f1(avg(g.map(x=>x.q1)))+'</td><td>'+f1(avg(g.map(x=>x.rn)))+'</td><td>'+f1(avg(g.map(x=>x.cob)))+'</td><td>'+f1(avg(g.map(x=>x.s)))+'</td><td>'+f1(avg(g.map(x=>x.conf)))+'</td></tr>'};
+ const ok=rows.filter(r=>{const f=r.t.find(t=>t.c==='ficha'),c=r.t.find(t=>t.c==='ctrl');return f&&c&&f.a>=2&&f.a>c.a}).length;
+ const sv=LS.get('surveys',[]),posts=LS.get('posts',[]);
+ return '<button class="btn link" data-act="home">‹ Inicio</button><h2>Resumen del equipo</h2><p class="mut">Pega aquí los bloques que envíen los participantes, uno por línea.</p>'+
+ '<textarea class="field mono" id="paste" data-bind="SV.paste" style="min-height:110px;font-size:12px" placeholder=\'{"p":"P1","t":[...]}\'>'+esc(raw)+'</textarea>'+
+ '<button class="btn p block" style="margin-top:8px" data-act="recalc">Calcular</button>'+
+ (rows.length?'<h3>'+rows.length+' participantes · '+flat.length+' tareas</h3><div class="tblw"><table class="res"><thead><tr><th></th><th>Tareas</th><th>Aciertos (de 3)</th><th>Del 1.er cuarto</th><th>Recomend. no aptos</th><th>Cobertura (de 20)</th><th>Segundos</th><th>Confianza</th></tr></thead><tbody>'+summ('ctrl')+summ('ficha')+'</tbody></table></div>'+
+  '<div class="note">Dueños con 2 o más aciertos con fichas y más que con currículums: <b>'+ok+' de '+rows.length+'</b>. Es un criterio propuesto, aún por definir. Con 5 participantes el resultado es indicativo.</div>'+
+  '<h3>Por participante</h3><div class="tblw"><table class="res"><thead><tr><th>P</th><th>Condición</th><th>Local</th><th>Aciertos</th><th>1.er cuarto</th><th>Recom.</th><th>Cob.</th><th>Cambios</th><th>Seg.</th><th>Conf.</th><th>Fácil</th></tr></thead><tbody>'+flat.map(x=>'<tr><td>'+esc(x.p)+'</td><td>'+(x.c==='ctrl'?'CV':'Ficha')+'</td><td>'+esc(x.v)+'</td><td>'+x.a+'</td><td>'+x.q1+'</td><td>'+x.rn+'</td><td>'+x.cob+'</td><td>'+x.ch+'</td><td>'+x.s+'</td><td>'+x.conf+'</td><td>'+x.fac+'</td></tr>').join('')+'</tbody></table></div>':'')+
+ '<h3>Datos de este navegador</h3><div class="small mut">'+posts.length+' fichas enviadas · '+sv.length+' encuestas</div>'+
+ '<div class="row wrapx" style="margin-top:8px"><button class="btn sm" data-act="exportLocal">Copiar fichas y encuestas (JSON)</button></div><textarea id="copybox" readonly style="position:absolute;left:-9999px;opacity:0" aria-hidden="true" tabindex="-1"></textarea>';
+};
+
+/* ---------- Acciones ---------- */
+const ACT={
+ home(){go('home')},
+ nav(d){go(d.n)},
+ reset(){if(G.SV.confirmReset){LS.clear();G.T=null;G.F=null;G.C=null;G.SV={};go('home');toast('Demo reiniciada')}else{G.SV.confirmReset=1;toast('Presiona de nuevo para borrar todo');setTimeout(()=>{G.SV.confirmReset=0},3000)}},
+ startFicha(d){startFicha(d.v)},
+ consent(){G.F.consent=!G.F.consent;saveDraft();render()},
+ ans(d){G.F.ans[d.c]=d.v;G.F.err='';saveDraft();render()},
+ fstep(d){const F=G.F,v=getVac(F.vacId),to=+d.s;
+  if(to>F.step){const e=validateStep(F,v,F.step);if(e){F.err=e;render();return}}
+  F.err='';F.step=to;saveDraft();render();window.scrollTo(0,0)},
+ submitFicha(){const F=G.F,v=getVac(F.vacId);
+  if(!F.name.trim()){F.err='Escribe tu nombre de pila.';render();return}
+  const posts=LS.get('posts',[]);const old=posts.findIndex(p=>p.id===F.id);
+  const rec=F.recName.trim()?(F.recName.trim()+(F.recRel.trim()?', '+F.recRel.trim():'')):null;
+  const rowp={id:F.id,vacId:F.vacId,name:F.name.trim(),phone:F.phone.trim(),ans:F.ans,text:F.text.trim(),rec:rec,cv:F.cv||null,ts:old>=0?posts[old].ts:Date.now(),edited:old>=0?Date.now():null,pos:99};
+  if(old>=0)posts[old]=rowp;else posts.push(rowp);LS.set('posts',posts);
+  LS.del('draft:'+F.vacId);F.step=4;F.sentAt=rowp.ts;F.err='';render();window.scrollTo(0,0)},
+ editFicha(){const F=G.F;const p=LS.get('posts',[]).find(x=>x.id===F.id);if(!p)return;
+  const rn=(p.rec||'').split(', ');G.F={vacId:p.vacId,id:p.id,step:1,ans:p.ans,text:p.text,recName:rn[0]||'',recRel:rn.slice(1).join(', '),name:p.name,phone:p.phone,cv:p.cv||null,consent:true};saveDraft();render();window.scrollTo(0,0)},
+ newVac(){newCtor()},
+ cstep(d){const C=G.C,to=+d.s;
+  if(to>C.step){if(C.step===1&&(!C.company.trim()||!C.role.trim())){C.err='Escribe el nombre del local y el cargo.';render();return}
+   if(C.step===2){const n=critCounts(C);if(n.ob<1){C.err='Elige al menos un criterio obligatorio.';render();return}}}
+  C.err='';C.step=to;render();window.scrollTo(0,0)},
+ setCrit(d){const C=G.C,n=critCounts(C),cur=C.crit[d.c]||'';
+  if(d.t==='ob'&&cur!=='ob'&&n.ob>=3){C.err='Máximo 3 obligatorios.';render();return}
+  if(d.t==='de'&&cur!=='de'&&n.de>=2){C.err='Máximo 2 deseables.';render();return}
+  C.err='';if(d.t)C.crit[d.c]=d.t;else delete C.crit[d.c];render()},
+ setQ(d){G.C.qi=+d.i;render()},
+ publishVac(){const C=G.C;const cr=Object.keys(BANK).filter(k=>C.crit[k]).sort((a,b)=>(C.crit[a]==='ob'?0:1)-(C.crit[b]==='ob'?0:1)).map(k=>({id:k,t:C.crit[k]}));
+  if(!cr.length){C.err='Elige al menos un criterio.';render();return}
+  const id='v'+Date.now().toString(36);
+  const v={id:id,code:C.company.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ]/g,'').slice(0,3).toUpperCase()||'VAC',company:C.company.trim(),comuna:C.comuna.trim()||'Santiago',role:C.role.trim(),schedule:C.schedule.trim()||'A convenir',crit:cr,q:QBANK[C.qi],deadline:C.deadline,slug:slug(C.company+' '+C.role),token:rtoken(16)};
+  const vs=LS.get('vacs',[]);vs.push(v);LS.set('vacs',vs);C.done=v;C.step=4;render();window.scrollTo(0,0)},
+ openBand(d){openBand(d.v)},
+ tab(d){G.V.tab=d.t;G.V.cvOpen=null;render();window.scrollTo(0,0)},
+ nav1(d){const ctx=getCtx(),s=bsOf(ctx);s.i=Math.max(0,Math.min(s.rand.length-1,s.i+(+d.d)));saveBs(ctx,s);G.V.cvOpen=null;render();window.scrollTo(0,0)},
+ dec(d){const ctx=getCtx(),s=bsOf(ctx);setDec(ctx,s,d.id,d.d);
+  const inList=modeOf(ctx)==='list';
+  if(!d.stay&&!inList){const idx=s.rand.indexOf(d.id);let nx=-1;for(let k=1;k<=s.rand.length;k++){const j=(idx+k)%s.rand.length;if(!s.dec[s.rand[j]]){nx=j;break}}s.i=nx>=0?nx:idx;saveBs(ctx,s);G.V.cvOpen=null}
+  render();if(!inList)window.scrollTo(0,0)},
+ mode(d){const ctx=getCtx();G.V.mode=d.m;G.V.cvOpen=null;logEv(ctx,'mode:'+d.m,'');render()},
+ openFocus(d){const ctx=getCtx(),s=bsOf(ctx);s.i=Math.max(0,s.rand.indexOf(d.id));saveBs(ctx,s);G.V.mode='focus';G.V.cvOpen=null;render();window.scrollTo(0,0)},
+ cvToggle(d){const ctx=getCtx();G.V.cvOpen=G.V.cvOpen===d.id?null:d.id;if(G.V.cvOpen){logEv(ctx,'cv:view',d.id);markViewed(ctx,bsOf(ctx),d.id)}render()},
+ dl(d){dlCv(d.id)},
+ rmCv(){CVdb.del(G.F.id);G.F.cv=null;saveDraft();render()},
+ toggleEnt(d){const ctx=getCtx(),s=bsOf(ctx);const on=s.dec[d.id]==='ent';
+  if(on)setDec(ctx,s,d.id,ctx.test&&ctx.cond==='ctrl'?'':'pre');else{if(entCount(s)>=3)return;setDec(ctx,s,d.id,'ent')}
+  if(s.dec[d.id]==='')delete s.dec[d.id],saveBs(ctx,s);render()},
+ motive(d,el){const ctx=getCtx(),s=bsOf(ctx);s.motive[d.id]=+el.value;saveBs(ctx,s);render()},
+ sent(d){const ctx=getCtx(),s=bsOf(ctx);if(s.sent[d.id])delete s.sent[d.id];else s.sent[d.id]=Date.now();saveBs(ctx,s);render()},
+ scale(d){G.SV[d.k]=+d.v;render()},
+ choice(d){G.SV[d.k]=d.v;render()},
+ sendSurvey(d){
+  if(d.k==='post'){if(!G.SV.p1||!G.SV.p2||!G.SV.p3){toast('Responde las tres primeras preguntas');return}
+   saveSurvey({kind:'post',vacId:G.F&&G.F.vacId,p1:G.SV.p1,p2:G.SV.p2,p3:G.SV.p3,p4:G.SV.p4||''});G.SV.donePost=1}
+  else{if(!G.SV.e1||!G.SV.e2||!G.SV.e3||!G.SV.e4){toast('Responde las cuatro primeras preguntas');return}
+   saveSurvey({kind:'emp',vacId:G.lastVac||null,e1:G.SV.e1,e2:G.SV.e2,e3:G.SV.e3,e4:G.SV.e4,e5:G.SV.e5||''});G.SV.doneEmp=1}
+  render();window.scrollTo(0,0)},
+ beginTest(){startTest(G.SV.tcode)},
+ resumeTest(){const T=G.T;go(T.step==='brief'?'testBrief':T.step==='work'?'work':T.step==='after'?'testAfter':T.step==='final'?'testFinal':'testDone')},
+ beginTask(){const t=curTask();LS.del('bs:'+t.key);t.start=Date.now();t.log=[['0','start','']];G.T.step='work';saveT();go('work')},
+ finishTask(){const t=curTask(),v=getVac(t.vacId);t.end=Date.now();t.m=metrics(t,v);logEv({test:true,task:t},'finish','');G.T.step='after';G.SV.c1=0;G.SV.c2=0;G.SV.c3='';G.SV.cErr='';saveT();go('testAfter')},
+ afterTask(){if(!G.SV.c1||!G.SV.c2){G.SV.cErr='Responde las dos preguntas con una nota de 1 a 5.';render();return}
+  const t=curTask();t.conf=G.SV.c1;t.fac=G.SV.c2;t.com=G.SV.c3||'';G.SV.cErr='';
+  if(G.T.ti+1<G.T.tasks.length){G.T.ti++;G.T.step='brief';saveT();go('testBrief')}else{G.T.step='final';saveT();go('testFinal')}},
+ finishTest(){if(!G.SV.f1){G.SV.fErr='Elige una opción.';render();return}
+  G.T.final={pref:G.SV.f1,com:G.SV.f2||''};G.T.step='done';saveT();
+  const res=LS.get('results',[]);res.push(JSON.parse(resultLine(G.T)));LS.set('results',res);go('testDone')},
+ copyRes(){copy(resultLine(G.T))},
+ recalc(){render()},
+ exportLocal(){copy(JSON.stringify({posts:LS.get('posts',[]),surveys:LS.get('surveys',[]),results:LS.get('results',[])}))}
+};
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el||el.tagName==='SELECT')return;const fn=ACT[el.dataset.act];if(fn&&!el.disabled){e.preventDefault();fn(el.dataset,el)}});
+async function handleCv(f){const F=G.F;if(!f||!F)return;
+ if(!(f.type==='application/pdf'||/\.pdf$/i.test(f.name))){F.err='El archivo debe ser un PDF.';render();return}
+ if(f.size>3*1024*1024){F.err='El PDF pesa más de 3 MB.';render();return}
+ const buf=await f.arrayBuffer();
+ if(String.fromCharCode.apply(null,new Uint8Array(buf.slice(0,5)))!=='%PDF-'){F.err='El archivo no parece un PDF válido.';render();return}
+ await CVdb.put(F.id,buf);F.cv={name:f.name.slice(0,60),size:f.size};F.err='';saveDraft();render()}
+document.addEventListener('change',e=>{const el=e.target;if(el.id==='fcv'){handleCv(el.files&&el.files[0]);return}if(el.tagName==='SELECT'&&el.dataset.act&&ACT[el.dataset.act])ACT[el.dataset.act](el.dataset,el)});
+document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.bind;if(!k)return;
+ const p=k.split('.');G[p[0]][p[1]]=e.target.value;
+ if(k==='F.text'){const c=document.getElementById('cnt');if(c)c.textContent=e.target.value.length}
+ if(p[0]==='F')saveDraft();});
+render();
+
+})();
+</script>
+</body></html>
